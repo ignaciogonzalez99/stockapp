@@ -6,7 +6,9 @@
     "dev": "next dev",
     "stop": "node scripts/stop-app.mjs",
     "build": "next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "eslint",
     "user:create": "node scripts/create-user.mjs",
     "seed:test": "node scripts/seed-test-data.mjs"

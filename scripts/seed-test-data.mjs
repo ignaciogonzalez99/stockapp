@@ -654,6 +654,9 @@ async function main() {
                 },
             });
         }
+    }, {
+        maxWait: 30_000,
+        timeout: 180_000,
     });
 
     console.log('Test data seed completado.');
