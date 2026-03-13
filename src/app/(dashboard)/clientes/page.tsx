@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { getClientes, deleteCliente, type Cliente } from './actions';
 import { ClienteModal } from '@/components/ClienteModal';
+import { ClienteInfoModal } from '@/components/ClienteInfoModal';
 import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
 
 export default function ClientesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [clientes, setClientes] = useState<Cliente[]>([]);
     const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
@@ -20,7 +22,11 @@ export default function ClientesPage() {
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (activeDropdownId !== null && !(event.target as Element).closest('.dropdown-menu') && !(event.target as Element).closest('.dropdown-trigger')) {
+            if (
+                activeDropdownId !== null
+                && !(event.target as Element).closest('.dropdown-menu')
+                && !(event.target as Element).closest('.dropdown-trigger')
+            ) {
                 setActiveDropdownId(null);
             }
         };
@@ -44,9 +50,13 @@ export default function ClientesPage() {
             setActiveDropdownId(null);
         } else {
             const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+            const dropdownWidth = 192;
+            const viewportRight = window.scrollX + window.innerWidth - 8;
+            const desiredLeft = rect.right + window.scrollX - dropdownWidth;
+
             setDropdownPosition({
                 top: rect.bottom + window.scrollY,
-                left: rect.right + window.scrollX - 192,
+                left: Math.max(8, Math.min(desiredLeft, viewportRight - dropdownWidth)),
             });
             setActiveDropdownId(clienteId);
         }
@@ -74,10 +84,20 @@ export default function ClientesPage() {
         setActiveDropdownId(null);
     };
 
+    const handleInfo = (cliente: Cliente) => {
+        setSelectedCliente(cliente);
+        setIsInfoModalOpen(true);
+        setActiveDropdownId(null);
+    };
+
     const handleCreateNew = () => {
         setSelectedCliente(undefined);
         setIsModalOpen(true);
     };
+
+    const activeCliente = activeDropdownId === null
+        ? undefined
+        : clientes.find((cliente) => cliente.id === activeDropdownId);
 
     return (
         <div className="flex h-full flex-col gap-6">
@@ -115,38 +135,43 @@ export default function ClientesPage() {
                 </div>
 
                 <div className="flex-1 overflow-auto">
-                    <div className="min-w-[800px]">
+                    <div className="md:min-w-[800px]">
                         <table className="w-full text-left text-sm text-gray-500">
                             <thead className="bg-gray-50 text-xs uppercase text-gray-700 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-6 py-3">Nombre</th>
-                                    <th className="px-6 py-3">Teléfono</th>
-                                    <th className="px-6 py-3">Email</th>
-                                    <th className="px-6 py-3">Dirección</th>
-                                    <th className="px-6 py-3">Documento</th>
-                                    <th className="px-6 py-3">Tipo</th>
-                                    <th className="px-6 py-3">Acciones</th>
+                                    <th className="px-4 py-3 md:px-6">Cliente</th>
+                                    <th className="hidden px-6 py-3 md:table-cell">Telefono</th>
+                                    <th className="hidden px-6 py-3 md:table-cell">Email</th>
+                                    <th className="hidden px-6 py-3 md:table-cell">Direccion</th>
+                                    <th className="hidden px-6 py-3 md:table-cell">Documento</th>
+                                    <th className="hidden px-6 py-3 md:table-cell">Tipo</th>
+                                    <th className="px-4 py-3 text-center md:px-6 md:text-left">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {clientes.map((cliente) => (
                                     <tr key={cliente.id} className="border-b bg-white hover:bg-gray-50">
-                                        <td className="px-6 py-4 font-medium text-gray-900">{cliente.name}</td>
-                                        <td className="px-6 py-4">{cliente.phone}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4 md:px-6">
+                                            <p className="font-medium text-gray-900">{cliente.name}</p>
+                                            <p className="mt-1 text-xs text-gray-500 md:hidden">
+                                                {cliente.docType}: {cliente.docNumber}
+                                            </p>
+                                        </td>
+                                        <td className="hidden px-6 py-4 md:table-cell">{cliente.phone}</td>
+                                        <td className="hidden px-6 py-4 md:table-cell">
                                             {cliente.email || <span className="text-pink-500">Sin registro</span>}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden px-6 py-4 md:table-cell">
                                             {cliente.address || <span className="text-pink-500">Sin registro</span>}
                                         </td>
-                                        <td className="px-6 py-4">{cliente.docNumber}</td>
-                                        <td className="px-6 py-4">{cliente.docType}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="hidden px-6 py-4 md:table-cell">{cliente.docNumber}</td>
+                                        <td className="hidden px-6 py-4 md:table-cell">{cliente.docType}</td>
+                                        <td className="px-4 py-4 text-center md:px-6 md:text-left">
                                             <button
-                                                onClick={(e) => handleDropdownClick(e, cliente.id)}
-                                                className="dropdown-trigger flex gap-2 text-sidebar hover:bg-gray-100 p-1 rounded"
+                                                onClick={(event) => handleDropdownClick(event, cliente.id)}
+                                                className="dropdown-trigger inline-flex gap-2 rounded p-1 text-sidebar hover:bg-gray-100"
                                             >
-                                                <span className="cursor-pointer text-xl font-bold">•••</span>
+                                                <span className="cursor-pointer text-xl font-bold">...</span>
                                             </button>
                                         </td>
                                     </tr>
@@ -166,24 +191,29 @@ export default function ClientesPage() {
                 </div>
             </div>
 
-            {/* Fixed Dropdown Menu */}
-            {activeDropdownId !== null && (
+            {activeDropdownId !== null && activeCliente && (
                 <div
                     className="dropdown-menu fixed z-50 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
                     style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
                 >
                     <div className="py-1">
                         <button
-                            onClick={() => handleEdit(clientes.find(c => c.id === activeDropdownId)!)}
+                            onClick={() => handleInfo(activeCliente)}
                             className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
-                            <span className="mr-2">✏️</span> Editar
+                            + Info
                         </button>
                         <button
-                            onClick={() => handleDeleteClick(clientes.find(c => c.id === activeDropdownId)!)}
+                            onClick={() => handleEdit(activeCliente)}
+                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                            Editar
+                        </button>
+                        <button
+                            onClick={() => handleDeleteClick(activeCliente)}
                             className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                         >
-                            <span className="mr-2">🗑️</span> Eliminar
+                            Eliminar
                         </button>
                     </div>
                 </div>
@@ -192,6 +222,11 @@ export default function ClientesPage() {
             <ClienteModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
+                cliente={selectedCliente}
+            />
+            <ClienteInfoModal
+                isOpen={isInfoModalOpen}
+                onClose={() => setIsInfoModalOpen(false)}
                 cliente={selectedCliente}
             />
             <DeleteConfirmationModal
