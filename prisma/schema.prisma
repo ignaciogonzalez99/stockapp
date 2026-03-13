@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CategoryType {
+  PRODUCT
+  VEHICLE
+}
+
+enum DocumentType {
+  RUT
+  CI
+}
+
+enum ReparacionStatus {
+  SIN_INICIAR
+  EN_CURSO
+  PAUSADO
+  FINALIZADO
+}
+
+enum ReparacionPriority {
+  BAJA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+model Category {
+  id             Int          @id @default(autoincrement())
+  name           String
+  normalizedName String
+  description    String?
+  type           CategoryType
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  products Product[]
+  vehicles Vehiculo[]
+
+  @@unique([type, normalizedName])
+  @@index([type])
+}
+
+model Proveedor {
+  id            Int      @id @default(autoincrement())
+  name          String
+  rut           String
+  normalizedRut String   @unique
+  address       String   @default("")
+  phone         String   @default("")
+  phone2        String   @default("")
+  email         String   @default("")
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products Product[]
+
+  @@index([name])
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  sku           String
+  normalizedSku String   @unique
+  quantity      Int      @default(0)
+  minStock      Int      @default(0)
+  measure       String   @default("Unidades")
+  currency      String   @default("$U")
+  costPrice     Float    @default(0)
+  sellPrice     Float    @default(0)
+  brand         String?  @default("")
+  model         String?  @default("")
+  description   String?  @default("")
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  version       Int      @default(1)
+
+  providerId Int?
+  provider   Proveedor? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  categoryId Int?
+  category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  movements StockMovement[]
+  reparacionInsumos ReparacionInsumo[]
+
+  @@index([providerId])
+  @@index([categoryId])
+  @@index([normalizedSku])
+}
+
+model StockMovement {
+  id        Int          @id @default(autoincrement())
+  productId Int
+  type      MovementType
+  amount    Int
+  reason    String       @default("MANUAL")
+  createdAt DateTime     @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+}
+
+model Cliente {
+  id                  Int          @id @default(autoincrement())
+  name                String
+  phone               String
+  email               String       @default("")
+  normalizedEmail     String?      @unique
+  docType             DocumentType
+  docNumber           String
+  normalizedDocNumber String
+  address             String       @default("")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  vehicles    Vehiculo[]
+  reparaciones Reparacion[]
+
+  @@unique([docType, normalizedDocNumber])
+  @@index([name])
+}
+
+model Vehiculo {
+  id              Int      @id @default(autoincrement())
+  plate           String?
+  normalizedPlate String?  @unique
+  brand           String
+  model           String   @default("")
+  year            Int
+  notes           String   @default("")
+  vin             String?
+  normalizedVin   String?  @unique
+  clientId        Int?
+  categoryId      Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client   Cliente? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  reparaciones Reparacion[]
+
+  @@index([clientId])
+  @@index([categoryId])
+  @@index([year])
+}
+
+model Reparacion {
+  id              Int                @id @default(autoincrement())
+  code            String             @unique
+  identificativo  String
+  description     String
+  status          ReparacionStatus   @default(SIN_INICIAR)
+  priority        ReparacionPriority @default(NORMAL)
+  fechaIngreso    DateTime           @default(now())
+  fechaInicio     DateTime?
+  fechaFin        DateTime?
+  vehiculoId      Int?
+  clienteId       Int?
+  clienteSnapshot String             @default("")
+  vehiculoSnapshot String            @default("")
+  version         Int                @default(1)
+  updatedAt       DateTime           @updatedAt
+
+  vehiculo Vehiculo? @relation(fields: [vehiculoId], references: [id], onDelete: SetNull)
+  cliente  Cliente?  @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  history  ReparacionHistory[]
+  insumos  ReparacionInsumo[]
+  manoObra ReparacionManoObra[]
+
+  @@index([vehiculoId])
+  @@index([clienteId])
+  @@index([status])
+  @@index([priority])
+}
+
+model ReparacionHistory {
+  id           Int              @id @default(autoincrement())
+  reparacionId Int
+  status       ReparacionStatus
+  changedAt    DateTime         @default(now())
+
+  reparacion Reparacion @relation(fields: [reparacionId], references: [id], onDelete: Cascade)
+
+  @@index([reparacionId, changedAt])
+}
+
+model ReparacionInsumo {
+  id              Int      @id @default(autoincrement())
+  reparacionId    Int
+  productId       Int
+  productSnapshot String
+  skuSnapshot     String
+  measureSnapshot String
+  quantity        Int
+  extra           Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  reparacion Reparacion @relation(fields: [reparacionId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([reparacionId, createdAt])
+  @@index([productId])
+}
+
+model ReparacionManoObra {
+  id          Int      @id @default(autoincrement())
+  reparacionId Int
+  description String
+  hours       Float    @default(0)
+  amount      Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  reparacion Reparacion @relation(fields: [reparacionId], references: [id], onDelete: Cascade)
+
+  @@index([reparacionId, createdAt])
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  username           String
+  normalizedUsername String   @unique
+  passwordHash       String
+  displayName        String   @default("")
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([username])
+}

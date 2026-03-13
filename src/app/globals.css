@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f7f7;
+  --foreground: #333333;
 }
 
 @theme inline {
@@ -10,17 +10,66 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Custom Palette */
+  --color-primary: #ffc431;
+  --color-primary-foreground: #000000;
+  --color-secondary: #888888;
+  --color-accent: #cc3366;
+  --color-muted: #888888;
+  --color-sidebar: #000011;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.bottom-sheet-form input:not([type='checkbox']):not([type='radio']),
+.bottom-sheet-form select,
+.bottom-sheet-form textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.bottom-sheet-form input:not([type='checkbox']):not([type='radio'])::placeholder,
+.bottom-sheet-form textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.bottom-sheet-form select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.bottom-sheet-form label {
+  color: #334155 !important;
+}
+
+.bottom-sheet-form .text-zinc-300,
+.bottom-sheet-form .text-zinc-400,
+.bottom-sheet-form .text-zinc-200,
+.bottom-sheet-form .text-zinc-500 {
+  color: #64748b !important;
+}
+
+.bottom-sheet-form .text-white {
+  color: #0f172a !important;
+}
+
+.bottom-sheet-form .border-zinc-700,
+.bottom-sheet-form .border-zinc-700\/50,
+.bottom-sheet-form .border-white\/10 {
+  border-color: #cbd5e1 !important;
+}
+
+.bottom-sheet-form .bg-zinc-800,
+.bottom-sheet-form .bg-zinc-900\/30,
+.bottom-sheet-form .bg-zinc-800\/30,
+.bottom-sheet-form .bg-zinc-800\/50 {
+  background-color: #f8fafc !important;
 }
